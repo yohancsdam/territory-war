@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Territory War</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M0 22q8-8 16-2t16-4v16H0z' fill='%2342a038'/%3E%3Ccircle cx='16' cy='10' r='5' fill='%23d9434f'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div>
+      <h1>Territory War</h1>
+      <p>Turn-based stickman battle for two players on the same device.</p>
+    </div>
+    <button type="button" class="btn" id="sound" aria-pressed="true">Sound on</button>
+  </header>
+
+  <section class="hud" aria-label="Battle status">
+    <div class="team c0" id="team0">
+      <span class="mark c0"></span><span class="tname" id="tn0">Red Team</span>
+      <span class="tsub" id="ts0"></span>
+      <div class="bar"><i id="tb0"></i></div>
+    </div>
+    <div class="clock">
+      <span class="num" id="timer">--</span>
+      <span class="who" id="who">No battle</span>
+      <div class="wind"><span>Wind</span><span class="wtrack"><i id="wbar"></i></span><span id="wtxt">0</span></div>
+    </div>
+    <div class="team c1" id="team1">
+      <span class="mark c1"></span><span class="tname" id="tn1">Blue Team</span>
+      <span class="tsub" id="ts1"></span>
+      <div class="bar"><i id="tb1"></i></div>
+    </div>
+  </section>
+
+  <div class="stage"><canvas id="cv" width="960" height="540" tabindex="0" aria-label="Battlefield"></canvas></div>
+
+  <div class="dock">
+    <div class="weapons" id="weapons" role="group" aria-label="Weapons"></div>
+    <div class="pad" id="pad" aria-label="Touch controls">
+      <button type="button" data-k="left">◀</button>
+      <button type="button" data-k="right">▶</button>
+      <button type="button" data-k="jump">Jump</button>
+      <button type="button" data-k="up">Aim ▲</button>
+      <button type="button" data-k="down">Aim ▼</button>
+      <button type="button" data-k="skip">Skip</button>
+      <button type="button" class="fire" data-k="fire">Fire</button>
+    </div>
+    <ul class="feed" id="feed" aria-live="polite"></ul>
+  </div>
+
+  <details class="help">
+    <summary>How to play</summary>
+    <ul>
+      <li>Each team plays one soldier per turn, alternating between teams. The team that eliminates every enemy soldier wins.</li>
+      <li>A soldier is eliminated when their health runs out or when they are knocked off the screen (sides or bottom).</li>
+      <li>Move: A and D or ←/→. Jump: W. Aim: mouse (or ↑/↓). Switch weapon: keys 1 to 6 or the buttons.</li>
+      <li>Fire: pistol, shotgun and sniper fire on click or Space. Bazooka, grenade and dynamite charge while you hold click or Space and launch on release. Esc cancels the charge.</li>
+      <li>You can only fire once per turn and you have 30 seconds. Wind pushes bazooka rockets and grenades.</li>
+      <li>Friendly fire is on: your explosions and your falls also hurt you.</li>
+      <li>On a touch screen, drag on the battlefield to aim and use the buttons to move.</li>
+    </ul>
+  </details>
+</div>
+
+<div class="overlay" id="menu">
+  <form class="box" id="setup" autocomplete="off">
+    <h2>Prepare for battle</h2>
+    <p>Pick names and rules. Red goes first.</p>
+    <div class="two">
+      <div class="field"><label for="n0">Team 1</label><input id="n0" maxlength="16" value="Red Team"></div>
+      <div class="field"><label for="n1">Team 2</label><input id="n1" maxlength="16" value="Blue Team"></div>
+    </div>
+    <div class="two">
+      <div class="field"><label for="size">Soldiers per team</label>
+        <select id="size"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option><option>6</option></select></div>
+      <div class="field"><label for="hp">Health per soldier</label>
+        <select id="hp"><option value="60">60 (quick)</option><option value="100" selected>100</option><option value="150">150 (long)</option></select></div>
+    </div>
+    <div class="field"><label for="style">Map</label>
+      <select id="style"><option value="random">Random</option><option value="hills">Hills</option><option value="islands">Floating islands</option><option value="canyon">Canyon</option></select></div>
+    <button type="submit" class="btn primary">Start battle</button>
+  </form>
+</div>
+
+<div class="overlay" id="over" role="dialog" aria-modal="true" aria-labelledby="overTitle" hidden>
+  <div class="box" id="overBox">
+    <h2 id="overTitle"></h2>
+    <p id="overText"></p>
+    <table class="stats" id="overStats"></table>
+    <button type="button" class="btn primary" id="rematch">Rematch on a new map</button>
+    <button type="button" class="btn" id="toMenu">Change teams</button>
+  </div>
+</div>
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
