@@ -4,13 +4,15 @@ import {
   EXPLOSION_RANGE_PAD, EXPLOSION_KNOCKBACK_MUL, EXPLOSION_LIFT,
   THROWN_STOP_SPEED, THROWN_BOUNCE_FRICTION, THROWN_GROUND_FRICTION
 } from './config.js';
-import { G, S } from './state.js';
+import { G, S, emit } from './state.js';
 import { solid, carve } from './terrain.js';
 import { hurt } from './units.js';
 import { canAct, beginResolve } from './turns.js';
-import { addPart, burst, shakeScreen } from './fx.js';
-import { sfx } from './audio.js';
 import { rand } from './rng.js';
+
+function burst(x, y, n, col, speed, life, size, g) {
+  emit({ k: 'burst', x: x, y: y, n: n, col: col, speed: speed, life: life, size: size, g: g });
+}
 
 export function unitAt(x, y, skip) {
   var units = S.units;
@@ -27,7 +29,7 @@ export function muzzle(u) {
 }
 function pushBullet(m, ang, speed, w, team, owner) {
   S.proj.push({
-    type: 'bullet', w: w.key, x: m.x, y: m.y, vx: Math.cos(ang) * speed, vy: Math.sin(ang) * speed,
+    id: ++S.projSeq, type: 'bullet', w: w.key, x: m.x, y: m.y, vx: Math.cos(ang) * speed, vy: Math.sin(ang) * speed,
     dmg: w.damage, crater: w.crater, life: w.life, g: w.gravity, team: team, owner: owner, age: 0, travel: 0
   });
 }
@@ -46,13 +48,13 @@ export function doFire() {
   } else {
     var s = w.minSpeed + pw * (w.maxSpeed - w.minSpeed);
     var p = {
-      type: w.kind === 'rocket' ? 'rocket' : k, w: k, x: m.x, y: m.y,
+      id: ++S.projSeq, type: w.kind === 'rocket' ? 'rocket' : k, w: k, x: m.x, y: m.y,
       vx: Math.cos(m.ang) * s, vy: Math.sin(m.ang) * s, team: G.t, owner: u, age: 0
     };
     if (w.kind === 'rocket') p.trail = 0; else p.fuse = w.fuse;
     S.proj.push(p);
   }
-  sfx(w.sound);
+  emit({ k: 'sfx', s: w.sound });
   T.stat.shots++;
   if (T.ammo[k] !== Infinity) T.ammo[k]--;
   G.fired = true; G.charging = false; G.power = 0;
@@ -78,8 +80,8 @@ export function explode(x, y, R, maxDmg, maxKB, team) {
   for (i = 0; i < 3; i++) burst(x, y, 10, ['#ffb703', '#fb8500', '#ffd166'][i], R * 3.2, 0.55, 3 + i, 0);
   burst(x, y, 12, '#555b60', R * 1.6, 1.1, 4, -40);
   S.booms.push({ x: x, y: y, r: R, t: 0 });
-  shakeScreen(Math.min(12, R / 6));
-  sfx('boom');
+  emit({ k: 'shake', v: Math.min(12, R / 6) });
+  emit({ k: 'sfx', s: 'boom' });
 }
 export function stepBullet(p, dt) {
   p.life -= dt; if (p.life <= 0) return true;
@@ -94,7 +96,7 @@ export function stepBullet(p, dt) {
       u.vx += p.vx / sp * BULLET_KNOCKBACK; u.vy -= BULLET_LIFT; u.onGround = false;
       hurt(u, p.dmg, p.team);
       burst(p.x, p.y, 5, '#ffe082', 160, 0.3, 2, 0);
-      sfx('hit');
+      emit({ k: 'sfx', s: 'hit' });
       return true;
     }
     if (solid(p.x, p.y)) {
@@ -117,7 +119,7 @@ export function stepRocket(p, dt) {
     if (u || solid(p.x, p.y)) { explode(p.x, p.y, w.radius, w.damage, w.knockback, p.team); return true; }
   }
   p.trail -= dt;
-  if (p.trail <= 0) { p.trail = 0.02; addPart(p.x, p.y, rand(-15, 15), rand(-15, 15), 0.5, '#9aa0a6', 3, 0); }
+  if (p.trail <= 0) { p.trail = 0.02; emit({ k: 'trail', x: p.x, y: p.y }); }
   return false;
 }
 export function stepThrown(p, dt) {

@@ -5,7 +5,8 @@ import { clamp } from './util.js';
 // 1 = solid ground, 0 = air. Row-major, W×H.
 export const mask = new Uint8Array(W * H);
 // version increases every time the mask changes, so the renderer knows when to repaint.
-export const terrain = { version: 0 };
+// log, when it is an array, collects every carve as {x, y, r} so it can be sent to the guest.
+export const terrain = { version: 0, log: null };
 
 export function solid(x, y) {
   x = x | 0; y = y | 0;
@@ -108,4 +109,5 @@ export function carve(cx, cy, r) {
     if (dx * dx + dy * dy <= r * r) mask[y * W + x] = 0;
   }
   terrain.version++;
+  if (terrain.log) terrain.log.push({ x: cx, y: cy, r: r });
 }

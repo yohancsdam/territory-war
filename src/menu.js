@@ -4,6 +4,7 @@ import { startBattle, resetToMenu } from './sim.js';
 import { invalidateWeapons } from './render.js';
 import { ac, isSoundOn, setSoundOn } from './audio.js';
 import { randomSeed } from './rng.js';
+import { clearFx } from './fx.js';
 import { esc } from './util.js';
 
 var lastCfg = null;
@@ -20,6 +21,7 @@ function readCfg() {
 // Starts a local battle on a freshly rolled map.
 export function beginBattle(cfg) {
   lastCfg = cfg;
+  clearFx();
   startBattle(Object.assign({}, cfg, { seed: randomSeed() }));
   $('menu').hidden = true; $('over').hidden = true;
   invalidateWeapons();
@@ -46,6 +48,7 @@ export function setupMenu() {
   $('toMenu').addEventListener('click', function () {
     $('over').hidden = true; $('menu').hidden = false;
     resetToMenu();
+    clearFx();
   });
   $('sound').addEventListener('click', function () {
     setSoundOn(!isSoundOn());

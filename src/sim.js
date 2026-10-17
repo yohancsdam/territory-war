@@ -1,26 +1,26 @@
-// Simulation entry points: battle setup, the fixed-step update and player actions.
+// Simulation entry points: battle setup, applyIntent and the fixed-step update.
 import {
   W, WEAPONS, weaponDef, SOLDIER_NAMES, TEAM_SIZE, START_AIM, AIM_SPEED, AIM_LIMIT, CHARGE_TIME
 } from './config.js';
-import { G, S, keys, feed } from './state.js';
+import { G, S, feed } from './state.js';
 import { genTerrain, groundY } from './terrain.js';
 import { updateUnit } from './units.js';
 import { doFire, updateProj } from './weapons.js';
 import { canAct, aliveCount, startTurn, beginResolve, updateResolve } from './turns.js';
-import { clearFx } from './fx.js';
-import { ac } from './audio.js';
 import { mulberry32, rangeOf, randomSeed } from './rng.js';
 import { clamp } from './util.js';
 
+// Builds the battlefield without starting the first turn. The online guest calls this to get
+// the same map and soldiers as the host, then follows the host's snapshots.
 // cfg: { names: [red, blue], hp, style, seed }. Map and soldier placement depend only on
 // style and seed, so the same cfg always produces the same battlefield.
-export function startBattle(cfg) {
+export function setupBattle(cfg) {
   S.style = genTerrain(cfg.style, cfg.seed);
   S.seed = cfg.seed;
   var rng = mulberry32((cfg.seed ^ 0x9E3779B9) >>> 0);
   function rand(a, b) { return rangeOf(rng, a, b); }
-  S.proj = []; S.booms = []; S.units = []; S.feedList = []; S.feedVersion++;
-  clearFx();
+  S.proj = []; S.booms = []; S.units = []; S.feedList = []; S.feedVersion++; S.fx = []; S.projSeq = 0;
+  S.ctl = { left: false, right: false, up: false, down: false };
   S.teams = [0, 1].map(function (t) {
     var ammo = {}; WEAPONS.forEach(function (w) { ammo[w.key] = w.ammo; });
     return { name: cfg.names[t], units: [], ptr: 0, ammo: ammo, stat: { dmg: 0, kills: 0, shots: 0 } };
@@ -40,32 +40,35 @@ export function startBattle(cfg) {
     }
   }
   G.t = 0; G.weapon = 'pistol'; G.elev = START_AIM; G.phase = 'play'; G.active = null; G.winner = -1;
+  G.fired = false; G.charging = false; G.power = 0; G.banner = ''; G.bannerT = 0;
+}
+
+export function startBattle(cfg) {
+  setupBattle(cfg);
   startTurn();
 }
 
 export function resetToMenu() {
-  G.phase = 'menu'; G.active = null; S.teams = null; S.units = []; S.proj = []; S.booms = [];
-  clearFx();
+  G.phase = 'menu'; G.active = null; S.teams = null; S.units = []; S.proj = []; S.booms = []; S.fx = [];
   genTerrain('hills', randomSeed());
 }
 
 /* ---------- Player actions ---------- */
-export function setWeapon(k) {
+function setWeapon(k) {
   if (!canAct() || G.charging) return;
   if (!(S.teams[G.t].ammo[k] > 0)) { feed('Out of ' + weaponDef(k).name.toLowerCase() + ' ammo.'); return; }
   G.weapon = k;
 }
-export function pressFire() {
+function pressFire() {
   if (!canAct()) return;
   var T = S.teams[G.t];
   if (!(T.ammo[G.weapon] > 0)) { feed('Out of ammo.'); return; }
-  ac();
   if (weaponDef(G.weapon).charge) { G.charging = true; G.power = 0; } else doFire();
 }
-export function releaseFire() { if (G.charging && canAct()) doFire(); else G.charging = false; }
-export function cancelCharge() { G.charging = false; G.power = 0; }
-export function skipTurn() { if (canAct()) { feed(G.active.name + ' skips the turn.'); beginResolve(); } }
-export function aimAt(px, py) {
+function releaseFire() { if (G.charging && canAct()) doFire(); else G.charging = false; }
+function cancelCharge() { G.charging = false; G.power = 0; }
+function skipTurn() { if (canAct()) { feed(G.active.name + ' skips the turn.'); beginResolve(); } }
+function aimAt(px, py) {
   var u = G.active; if (!u) return;
   var dx = px - u.x, dy = py - (u.y - 16);
   if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
@@ -74,17 +77,39 @@ export function aimAt(px, py) {
   }
 }
 
+function isWeapon(k) {
+  for (var i = 0; i < WEAPONS.length; i++) if (WEAPONS[i].key === k) return true;
+  return false;
+}
+function finite(v) { return typeof v === 'number' && isFinite(v); }
+
+// The only way a player action enters the game, whether the intent comes from the local
+// input or from the network. Applies to whoever is the active soldier; the caller decides
+// whose intents to accept. Unknown or malformed fields are ignored.
+export function applyIntent(it) {
+  if (!it || !S.teams) return;
+  S.ctl.left = it.left === true; S.ctl.right = it.right === true;
+  S.ctl.up = it.up === true; S.ctl.down = it.down === true;
+  if (typeof it.weapon === 'string' && isWeapon(it.weapon)) setWeapon(it.weapon);
+  if (finite(it.aimX) && finite(it.aimY) && canAct()) aimAt(it.aimX, it.aimY);
+  if (it.jump === true) G.jumpReq = true;
+  if (it.fireDown === true) pressFire();
+  if (it.fireUp === true) releaseFire();
+  if (it.cancel === true) cancelCharge();
+  if (it.skip === true) skipTurn();
+}
+
 /* ---------- Fixed-step update ---------- */
 export function step(dt) {
   if (!S.teams) return;
-  var ctrl = null;
+  var ctrl = null, ctl = S.ctl;
   if (G.phase === 'play' && G.active && G.active.alive) {
-    var mv = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
+    var mv = (ctl.right ? 1 : 0) - (ctl.left ? 1 : 0);
     if (G.charging) mv = 0;
     ctrl = { move: mv, jump: G.jumpReq && !G.charging };
     G.jumpReq = false;
-    if (keys.up) G.elev = clamp(G.elev + AIM_SPEED * dt, -AIM_LIMIT, AIM_LIMIT);
-    if (keys.down) G.elev = clamp(G.elev - AIM_SPEED * dt, -AIM_LIMIT, AIM_LIMIT);
+    if (ctl.up) G.elev = clamp(G.elev + AIM_SPEED * dt, -AIM_LIMIT, AIM_LIMIT);
+    if (ctl.down) G.elev = clamp(G.elev - AIM_SPEED * dt, -AIM_LIMIT, AIM_LIMIT);
     if (G.charging) {
       G.power = Math.min(1, G.power + dt / CHARGE_TIME);
       if (G.power >= 1) doFire();

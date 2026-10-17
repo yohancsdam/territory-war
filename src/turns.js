@@ -15,6 +15,7 @@ export function startTurn() {
   var u = nextUnit(G.t);
   if (!u) { endGame(); return; }
   G.active = u; G.timer = TURN_TIME; G.phase = 'play'; G.fired = false; G.charging = false; G.power = 0; G.jumpReq = false;
+  S.ctl = { left: false, right: false, up: false, down: false };
   if (!(S.teams[G.t].ammo[G.weapon] > 0)) G.weapon = 'pistol';
   setBanner(S.teams[G.t].name + "'s turn: " + u.name);
   feed(S.teams[G.t].name + "'s turn: " + u.name + '.');

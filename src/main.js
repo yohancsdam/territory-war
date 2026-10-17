@@ -1,14 +1,13 @@
 import './style.css';
 import { DT } from './config.js';
-import { G, S, keys } from './state.js';
+import { G, S, takeFx, serializeSnapshot, applySnapshot } from './state.js';
 import { genTerrain, hashMask, mask } from './terrain.js';
-import { randomSeed } from './rng.js';
-import { step, startBattle, setWeapon, pressFire, releaseFire } from './sim.js';
-import { doFire } from './weapons.js';
-import { updateFx } from './fx.js';
+import { step, startBattle, applyIntent } from './sim.js';
+import { playFx, updateFx } from './fx.js';
 import { setupRender, draw, updateHUD } from './render.js';
-import { setupInput } from './input.js';
+import { setupInput, pollIntent, setInputEnabled } from './input.js';
 import { setupMenu, showGameOver, beginBattle } from './menu.js';
+import { randomSeed } from './rng.js';
 
 var cv = document.getElementById('cv');
 setupRender(cv);
@@ -21,8 +20,11 @@ function frame(ts) {
   requestAnimationFrame(frame);
   if (!lastTs) lastTs = ts;
   var dt = Math.min(0.05, (ts - lastTs) / 1000); lastTs = ts;
+  setInputEnabled(!!S.teams && (G.phase === 'play' || G.phase === 'resolve'));
+  applyIntent(pollIntent());
   acc += dt;
   while (acc >= DT) { step(DT); acc -= DT; }
+  takeFx().forEach(playFx);
   if (G.phase === 'over' && lastPhase !== 'over') showGameOver();
   lastPhase = G.phase;
   updateFx(dt);
@@ -31,11 +33,14 @@ function frame(ts) {
 }
 requestAnimationFrame(frame);
 
+// Test hook.
 window.__tw = {
-  start: beginBattle, startSim: startBattle, step: step, fire: doFire, press: pressFire, release: releaseFire,
+  start: beginBattle, startSim: startBattle, step: step, applyIntent: applyIntent,
+  press: function () { applyIntent({ fireDown: true }); },
+  release: function () { applyIntent({ fireUp: true }); },
   state: function () { return { G: G, teams: S.teams, units: S.units, proj: S.proj }; },
-  keys: keys, setWeapon: setWeapon, mask: mask,
+  serializeSnapshot: serializeSnapshot, applySnapshot: applySnapshot,
+  mask: mask, hashMask: hashMask,
   // Generates a map (replacing the current terrain) and returns the hash of its mask.
-  terrainHash: function (style, seed) { genTerrain(style, seed); return hashMask(); },
-  hashMask: hashMask
+  terrainHash: function (style, seed) { genTerrain(style, seed); return hashMask(); }
 };

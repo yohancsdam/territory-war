@@ -1,8 +1,6 @@
 import { W, H, GRAV, WALK_SPEED, JUMP_SPEED_X, JUMP_SPEED_Y } from './config.js';
-import { S, feed } from './state.js';
+import { S, feed, emit } from './state.js';
 import { solid, groundAt } from './terrain.js';
-import { addText, burst } from './fx.js';
-import { sfx } from './audio.js';
 import { clamp } from './util.js';
 
 export function bodyBlocked(x, y, dir) {
@@ -27,8 +25,8 @@ export function hurt(u, dmg, team) {
   u.hp -= dmg; u.hurtT = 0.3;
   if (team >= 0) u.lastHit = team;
   if (team >= 0 && team !== u.team) S.teams[team].stat.dmg += dmg;
-  addText(u.x, u.y - 42, '-' + dmg, team === u.team ? '#ffd166' : '#ffffff');
-  burst(u.x, u.y - 14, 6, '#c62828', 120, 0.5, 2, 400);
+  emit({ k: 'text', x: u.x, y: u.y - 42, txt: '-' + dmg, col: team === u.team ? '#ffd166' : '#ffffff' });
+  emit({ k: 'burst', x: u.x, y: u.y - 14, n: 6, col: '#c62828', speed: 120, life: 0.5, size: 2, g: 400 });
   if (u.hp <= 0) die(u, 'dmg');
 }
 export function die(u, how) {
@@ -37,10 +35,10 @@ export function die(u, how) {
   var cr = (u.lastHit >= 0 && u.lastHit !== u.team) ? u.lastHit : -1;
   if (cr >= 0) S.teams[cr].stat.kills++;
   var x = clamp(u.x, 10, W - 10), y = clamp(u.y - 14, 10, H - 10);
-  burst(x, y, 18, '#f4f4f4', 180, 0.8, 3, 300);
-  addText(x, y - 20, how === 'out' ? 'Out!' : 'K.O.', '#ffd166');
+  emit({ k: 'burst', x: x, y: y, n: 18, col: '#f4f4f4', speed: 180, life: 0.8, size: 3, g: 300 });
+  emit({ k: 'text', x: x, y: y - 20, txt: how === 'out' ? 'Out!' : 'K.O.', col: '#ffd166' });
   feed(u.name + ' (' + S.teams[u.team].name + ') ' + (how === 'out' ? 'was blasted off the map.' : 'fell in battle.'));
-  sfx('hit');
+  emit({ k: 'sfx', s: 'hit' });
 }
 // c is the control for the active soldier ({move, jump}) or null for everyone else.
 export function updateUnit(u, dt, c) {

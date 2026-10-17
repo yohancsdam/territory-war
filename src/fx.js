@@ -1,21 +1,36 @@
-// Purely visual effects: particles, floating text and screen shake.
-// Nothing in here affects the simulation.
+// Purely visual and audio effects: particles, floating text, screen shake and sounds.
+// The simulation never calls this module directly; it queues events with state.emit()
+// and the frame loop plays them here (on the host from the local queue, on the guest from
+// snapshots). Nothing in here affects the simulation.
 import { rand } from './rng.js';
+import { sfx } from './audio.js';
 
 export const FX = { parts: [], texts: [], shake: 0 };
 
-export function addText(x, y, txt, col) { FX.texts.push({ x: x, y: y, t: 0, txt: txt, col: col || '#fff' }); }
-export function addPart(x, y, vx, vy, life, col, size, g) {
+function addPart(x, y, vx, vy, life, col, size, g) {
   if (FX.parts.length > 500) FX.parts.shift();
   FX.parts.push({ x: x, y: y, vx: vx, vy: vy, life: life, max: life, col: col, size: size, g: g || 0 });
 }
-export function burst(x, y, n, col, speed, life, size, g) {
+function burst(x, y, n, col, speed, life, size, g) {
   for (var i = 0; i < n; i++) {
     var a = rand(0, 6.283), s = rand(0.2, 1) * speed;
     addPart(x, y, Math.cos(a) * s, Math.sin(a) * s, rand(0.5, 1) * life, col, size, g);
   }
 }
-export function shakeScreen(v) { FX.shake = Math.max(FX.shake, v); }
+
+// Event shapes (built by the simulation):
+//   { k:'burst', x, y, n, col, speed, life, size, g }
+//   { k:'trail', x, y }                 rocket smoke puff
+//   { k:'text', x, y, txt, col }
+//   { k:'shake', v }
+//   { k:'sfx', s }                      'shot' | 'big' | 'boom' | 'hit'
+export function playFx(e) {
+  if (e.k === 'burst') burst(e.x, e.y, e.n, e.col, e.speed, e.life, e.size, e.g);
+  else if (e.k === 'trail') addPart(e.x, e.y, rand(-15, 15), rand(-15, 15), 0.5, '#9aa0a6', 3, 0);
+  else if (e.k === 'text') FX.texts.push({ x: e.x, y: e.y, t: 0, txt: e.txt, col: e.col || '#fff' });
+  else if (e.k === 'shake') FX.shake = Math.max(FX.shake, e.v);
+  else if (e.k === 'sfx') sfx(e.s);
+}
 
 export function updateFx(dt) {
   var i;
