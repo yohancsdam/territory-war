@@ -103,3 +103,23 @@ table.stats th:first-child{text-align:left}
 table.stats td{padding:5px 0;text-align:right;font-variant-numeric:tabular-nums}
 table.stats td:first-child{text-align:left;display:flex;gap:8px;align-items:center}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* Online: connection indicator, room panel, status lines */
+.tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.net{display:inline-flex;align-items:center;gap:6px;font-size:.85rem;font-weight:600;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2)}
+.net::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--ink-2)}
+.net[data-state="connecting"]::before{background:#e0a100}
+.net[data-state="connected"]::before{background:var(--good)}
+.net[data-state="disconnected"]::before{background:var(--p1)}
+.room{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:12px}
+.roomcode{display:flex;align-items:center;gap:10px}
+.roomcode span{font-size:.88rem;color:var(--ink-2)}
+.roomcode strong{font-family:"Big Shoulders Display",Impact,"Arial Narrow",sans-serif;font-weight:800;font-size:2rem;letter-spacing:.12em;line-height:1;flex:1;font-variant-numeric:tabular-nums}
+.box .btn.small,.btn.small{width:auto;padding:6px 12px;margin:0}
+.status{font-size:.9rem;color:var(--ink-2);margin:8px 0 0}
+.box p.status{margin:0 0 12px}
+.room .status{margin:8px 0 0}
+.status.error{color:var(--p1);font-weight:600}
+.status.ok{color:var(--good);font-weight:600}
+.box.lost{border-top-color:var(--p1)}
+#joinCode{text-transform:uppercase;letter-spacing:.15em;font-weight:600}

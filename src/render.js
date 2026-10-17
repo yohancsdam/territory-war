@@ -196,8 +196,10 @@ export function draw() {
 }
 
 /* ---------- HUD ---------- */
-var weaponSig = '', hudT = 0, feedSeen = -1;
+var weaponSig = '', hudT = 0, feedSeen = -1, perspective = -1;
 export function invalidateWeapons() { weaponSig = ''; }
+// Online: which team this screen plays (0 or 1), so the HUD can say "your turn". -1 = local.
+export function setPerspective(team) { perspective = team; }
 
 function renderFeed() {
   if (feedSeen === S.feedVersion) return;
@@ -221,7 +223,9 @@ export function updateHUD(dt) {
     $('team' + t).className = 'team c' + t + ((G.phase === 'play' || G.phase === 'resolve') && G.t === t ? ' on' : '');
   }
   $('timer').textContent = G.phase === 'play' ? Math.ceil(G.timer) : (G.phase === 'resolve' ? '…' : '--');
-  $('who').textContent = G.active ? (teams[G.t].name + ': ' + G.active.name) : (G.phase === 'over' ? 'Battle over' : 'No battle');
+  var who = G.active ? (teams[G.t].name + ': ' + G.active.name) : (G.phase === 'over' ? 'Battle over' : 'No battle');
+  if (G.active && perspective >= 0) who = (G.t === perspective ? 'Your turn: ' : "Opponent's turn: ") + G.active.name;
+  $('who').textContent = who;
   var sig = G.t + '|' + G.weapon + '|' + G.phase + '|' + WEAPONS.map(function (x) { return teams[G.t].ammo[x.key]; }).join(',');
   if (sig !== weaponSig) {
     weaponSig = sig;

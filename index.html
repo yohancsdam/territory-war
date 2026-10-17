@@ -14,9 +14,12 @@
   <header class="top">
     <div>
       <h1>Territory War</h1>
-      <p>Turn-based stickman battle for two players on the same device.</p>
+      <p>Turn-based stickman battle for two players, on one device or online.</p>
     </div>
-    <button type="button" class="btn" id="sound" aria-pressed="true">Sound on</button>
+    <div class="tools">
+      <span class="net" id="netStatus" role="status" hidden></span>
+      <button type="button" class="btn" id="sound" aria-pressed="true">Sound on</button>
+    </div>
   </header>
 
   <section class="hud" aria-label="Battle status">
@@ -66,10 +69,28 @@
   </details>
 </div>
 
-<div class="overlay" id="menu">
+<div class="overlay" id="start">
+  <div class="box">
+    <h2>Territory War</h2>
+    <p>Two teams of six stickmen, one shot per turn. The last team standing wins.</p>
+    <button type="button" class="btn primary" id="btnLocal">Local two-player</button>
+    <button type="button" class="btn" id="btnHost">Create online room</button>
+    <button type="button" class="btn" id="btnJoin">Join a room</button>
+  </div>
+</div>
+
+<div class="overlay" id="menu" hidden>
   <form class="box" id="setup" autocomplete="off">
     <h2>Prepare for battle</h2>
-    <p>Pick names and rules. Red goes first.</p>
+    <p id="setupText">Pick names and rules. Red goes first.</p>
+    <div class="room" id="roomPanel" hidden>
+      <div class="roomcode">
+        <span>Room code</span>
+        <strong id="roomCode">······</strong>
+        <button type="button" class="btn small" id="copyCode" disabled>Copy</button>
+      </div>
+      <p class="status" id="roomStatus" role="status" aria-live="polite"></p>
+    </div>
     <div class="two">
       <div class="field"><label for="n0">Team 1</label><input id="n0" maxlength="16" value="Red Team"></div>
       <div class="field"><label for="n1">Team 2</label><input id="n1" maxlength="16" value="Blue Team"></div>
@@ -80,8 +101,37 @@
       <div class="field"><label for="style">Map</label>
         <select id="style"><option value="random">Random</option><option value="hills">Hills</option><option value="islands">Floating islands</option><option value="canyon">Canyon</option></select></div>
     </div>
-    <button type="submit" class="btn primary">Start battle</button>
+    <button type="submit" class="btn primary" id="startBtn">Start battle</button>
+    <button type="button" class="btn" id="setupBack">Back</button>
   </form>
+</div>
+
+<div class="overlay" id="join" hidden>
+  <form class="box" id="joinForm" autocomplete="off">
+    <h2>Join a room</h2>
+    <p>Ask the host for their 6-character room code. You'll play as the blue team.</p>
+    <div class="field"><label for="joinCode">Room code</label>
+      <input id="joinCode" maxlength="9" autocapitalize="characters" spellcheck="false" placeholder="K7M2PQ"></div>
+    <p class="status" id="joinStatus" role="status" aria-live="polite"></p>
+    <button type="submit" class="btn primary" id="joinBtn">Join</button>
+    <button type="button" class="btn" id="joinBack">Back</button>
+  </form>
+</div>
+
+<div class="overlay" id="guestWait" hidden>
+  <div class="box">
+    <h2>Waiting for the host</h2>
+    <p id="guestWaitText"></p>
+    <button type="button" class="btn" id="guestLeave">Leave room</button>
+  </div>
+</div>
+
+<div class="overlay" id="netLost" role="alertdialog" aria-modal="true" aria-labelledby="netLostTitle" hidden>
+  <div class="box lost">
+    <h2 id="netLostTitle">Match interrupted</h2>
+    <p id="netLostText">The connection to your opponent was lost.</p>
+    <button type="button" class="btn primary" id="netLostBack">Back to menu</button>
+  </div>
 </div>
 
 <div class="overlay" id="over" role="dialog" aria-modal="true" aria-labelledby="overTitle" hidden>
@@ -89,6 +139,7 @@
     <h2 id="overTitle"></h2>
     <p id="overText"></p>
     <table class="stats" id="overStats"></table>
+    <p class="status" id="overStatus" role="status" aria-live="polite" hidden></p>
     <button type="button" class="btn primary" id="rematch">Rematch on a new map</button>
     <button type="button" class="btn" id="toMenu">Change teams</button>
   </div>
