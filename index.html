@@ -28,7 +28,6 @@
     <div class="clock">
       <span class="num" id="timer">--</span>
       <span class="who" id="who">No battle</span>
-      <div class="wind"><span>Wind</span><span class="wtrack"><i id="wbar"></i></span><span id="wtxt">0</span></div>
     </div>
     <div class="team c1" id="team1">
       <span class="mark c1"></span><span class="tname" id="tn1">Blue Team</span>
@@ -56,12 +55,12 @@
   <details class="help">
     <summary>How to play</summary>
     <ul>
-      <li>Each team plays one soldier per turn, alternating between teams. The team that eliminates every enemy soldier wins.</li>
-      <li>A soldier is eliminated when their health runs out or when they are knocked off the screen (sides or bottom).</li>
+      <li>Each team has 6 soldiers and plays one of them per turn, alternating between teams. The team that eliminates every enemy soldier wins.</li>
+      <li>A soldier is eliminated when their health runs out or when they are knocked off the screen (sides or bottom). Falling doesn't hurt.</li>
       <li>Move: A and D or ←/→. Jump: W. Aim: mouse (or ↑/↓). Switch weapon: keys 1 to 6 or the buttons.</li>
       <li>Fire: pistol, shotgun and sniper fire on click or Space. Bazooka, grenade and dynamite charge while you hold click or Space and launch on release. Esc cancels the charge.</li>
-      <li>You can only fire once per turn and you have 30 seconds. Wind pushes bazooka rockets and grenades.</li>
-      <li>Friendly fire is on: your explosions and your falls also hurt you.</li>
+      <li>You can only fire once per turn and you have 60 seconds. If time runs out, you lose the turn. There is no wind.</li>
+      <li>Friendly fire is on: your shots and explosions also hurt your own team.</li>
       <li>On a touch screen, drag on the battlefield to aim and use the buttons to move.</li>
     </ul>
   </details>
@@ -76,13 +75,11 @@
       <div class="field"><label for="n1">Team 2</label><input id="n1" maxlength="16" value="Blue Team"></div>
     </div>
     <div class="two">
-      <div class="field"><label for="size">Soldiers per team</label>
-        <select id="size"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option><option>6</option></select></div>
       <div class="field"><label for="hp">Health per soldier</label>
         <select id="hp"><option value="60">60 (quick)</option><option value="100" selected>100</option><option value="150">150 (long)</option></select></div>
+      <div class="field"><label for="style">Map</label>
+        <select id="style"><option value="random">Random</option><option value="hills">Hills</option><option value="islands">Floating islands</option><option value="canyon">Canyon</option></select></div>
     </div>
-    <div class="field"><label for="style">Map</label>
-      <select id="style"><option value="random">Random</option><option value="hills">Hills</option><option value="islands">Floating islands</option><option value="canyon">Canyon</option></select></div>
     <button type="submit" class="btn primary">Start battle</button>
   </form>
 </div>

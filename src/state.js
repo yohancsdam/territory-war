@@ -2,7 +2,7 @@ import { TURN_TIME, START_AIM, BANNER_TIME } from './config.js';
 
 // Turn and control state.
 export const G = {
-  phase: 'menu', t: 0, active: null, timer: TURN_TIME, wind: 0, weapon: 'pistol', elev: START_AIM,
+  phase: 'menu', t: 0, active: null, timer: TURN_TIME, weapon: 'pistol', elev: START_AIM,
   charging: false, power: 0, fired: false, resolveT: 0, stableT: 0, jumpReq: false,
   banner: '', bannerT: 0, winner: -1
 };

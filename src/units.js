@@ -1,6 +1,4 @@
-import {
-  W, H, GRAV, WALK_SPEED, JUMP_SPEED_X, JUMP_SPEED_Y, FALL_SAFE_SPEED, FALL_DAMAGE_DIV
-} from './config.js';
+import { W, H, GRAV, WALK_SPEED, JUMP_SPEED_X, JUMP_SPEED_Y } from './config.js';
 import { S, feed } from './state.js';
 import { solid, groundAt } from './terrain.js';
 import { addText, burst } from './fx.js';
@@ -76,14 +74,8 @@ export function updateUnit(u, dt, c) {
         u.y = yy; landed = true; break;
       }
     }
-    if (landed) {
-      var v = u.vy;
-      u.vx = 0; u.vy = 0; u.onGround = true;
-      if (v > FALL_SAFE_SPEED) {
-        var dmg = Math.round((v - FALL_SAFE_SPEED) / FALL_DAMAGE_DIV);
-        if (dmg > 0) hurt(u, dmg, -1);
-      }
-    } else u.y = ny;
+    if (landed) { u.vx = 0; u.vy = 0; u.onGround = true; }
+    else u.y = ny;
   } else {
     if (solid(u.x, ny - 26) || solid(u.x - 3, ny - 26) || solid(u.x + 3, ny - 26)) u.vy = 0; else u.y = ny;
   }

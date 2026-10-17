@@ -11,7 +11,6 @@ function $(id) { return document.getElementById(id); }
 function readCfg() {
   return {
     names: [$('n0').value.trim() || 'Red Team', $('n1').value.trim() || 'Blue Team'],
-    size: parseInt($('size').value, 10),
     hp: parseInt($('hp').value, 10),
     style: $('style').value
   };

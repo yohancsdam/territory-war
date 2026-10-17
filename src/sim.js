@@ -1,6 +1,6 @@
 // Simulation entry points: battle setup, the fixed-step update and player actions.
 import {
-  W, WEAPONS, weaponDef, SOLDIER_NAMES, START_AIM, AIM_SPEED, AIM_LIMIT, CHARGE_TIME
+  W, WEAPONS, weaponDef, SOLDIER_NAMES, TEAM_SIZE, START_AIM, AIM_SPEED, AIM_LIMIT, CHARGE_TIME
 } from './config.js';
 import { G, S, keys, feed } from './state.js';
 import { genTerrain, groundY } from './terrain.js';
@@ -23,8 +23,8 @@ export function startBattle(cfg) {
   var ranges = [[60, 250], [710, 900]];
   for (var t = 0; t < 2; t++) {
     var lo = ranges[t][0], hi = ranges[t][1];
-    for (var i = 0; i < cfg.size; i++) {
-      var x = lo + (i + 0.5) * (hi - lo) / cfg.size + rand(-6, 6), gy = groundY(x), tries = 0;
+    for (var i = 0; i < TEAM_SIZE; i++) {
+      var x = lo + (i + 0.5) * (hi - lo) / TEAM_SIZE + rand(-6, 6), gy = groundY(x), tries = 0;
       while (gy < 0 && tries < 40) { x = clamp(x + (tries % 2 ? 1 : -1) * 8 * tries, 5, W - 5); gy = groundY(x); tries++; }
       if (gy < 0) { x = t === 0 ? 150 : 810; gy = groundY(x); if (gy < 0) gy = 300; }
       var u = {

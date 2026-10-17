@@ -222,10 +222,6 @@ export function updateHUD(dt) {
   }
   $('timer').textContent = G.phase === 'play' ? Math.ceil(G.timer) : (G.phase === 'resolve' ? '…' : '--');
   $('who').textContent = G.active ? (teams[G.t].name + ': ' + G.active.name) : (G.phase === 'over' ? 'Battle over' : 'No battle');
-  var w = G.wind, bar = $('wbar');
-  bar.style.width = (Math.abs(w) * 50) + '%';
-  bar.style.left = w < 0 ? (50 - Math.abs(w) * 50) + '%' : '50%';
-  $('wtxt').textContent = w === 0 ? 'no wind' : (w < 0 ? '← ' : '') + Math.abs(w).toFixed(1) + (w > 0 ? ' →' : '');
   var sig = G.t + '|' + G.weapon + '|' + G.phase + '|' + WEAPONS.map(function (x) { return teams[G.t].ammo[x.key]; }).join(',');
   if (sig !== weaponSig) {
     weaponSig = sig;

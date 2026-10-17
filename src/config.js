@@ -10,7 +10,8 @@ export const DT = 1 / 120;  // fixed simulation step (seconds)
 export const GRAV = 900;    // gravity for soldiers, grenades and dynamite (px/s²)
 
 /* ---------- Turns ---------- */
-export const TURN_TIME = 30;            // seconds per turn
+export const TURN_TIME = 60;            // seconds per turn
+export const TEAM_SIZE = 6;             // soldiers per team (max SOLDIER_NAMES[t].length)
 export const BANNER_TIME = 2;           // seconds the "turn of…" banner stays on screen
 // After a shot the turn ends once nothing has moved for RESOLVE_SETTLE_TIME seconds,
 // but never before RESOLVE_MIN_TIME nor later than RESOLVE_MAX_TIME.
@@ -22,8 +23,6 @@ export const RESOLVE_MAX_TIME = 14;
 export const WALK_SPEED = 58;           // px/s
 export const JUMP_SPEED_Y = 330;        // upward launch speed (px/s)
 export const JUMP_SPEED_X = 70;         // forward launch speed (px/s)
-export const FALL_SAFE_SPEED = 430;     // landing faster than this hurts
-export const FALL_DAMAGE_DIV = 9;       // damage = (landing speed - safe speed) / this
 export const AIM_SPEED = 1.4;           // rad/s when aiming with the keys
 export const AIM_LIMIT = 1.35;          // max aim angle above/below horizontal (rad)
 export const START_AIM = 0.35;          // initial aim angle (rad)
@@ -33,9 +32,6 @@ export const SOLDIER_NAMES = [
   ['Rex', 'Ana', 'Pipo', 'Luz', 'Tito', 'Nano'],
   ['Bruno', 'Sol', 'Kira', 'Max', 'Lola', 'Zoe']
 ];
-
-/* ---------- Wind ---------- */
-export const WIND_MAX = 1;              // wind is rolled in [-WIND_MAX, WIND_MAX] each turn
 
 /* ---------- Charged weapons ---------- */
 export const CHARGE_TIME = 1.4;         // seconds to reach full power (auto-fires at full)
@@ -67,7 +63,7 @@ export const THROWN_GROUND_FRICTION = 0.03; // fraction of horizontal speed kept
      knockback push at the centre (px/s) fuse      seconds until it explodes (thrown)
      bounce    speed kept on wall/floor bounces (thrown)
      gravity   rocket drop (px/s², rockets only; thrown items use GRAV)
-     windFactor how much wind pushes it  ownerSafeTime rocket can't hit the shooter this early (s)
+     ownerSafeTime rocket can't hit the shooter this early (s)
    ammo: per team per battle (Infinity = unlimited). sound: 'shot' | 'big' */
 export const WEAPONS = [
   { key: 'pistol', name: 'Pistol', ammo: Infinity, charge: false, kind: 'bullet', sound: 'shot',
@@ -78,13 +74,11 @@ export const WEAPONS = [
     pellets: 1, spread: 0, speed: 1700, speedVar: 0, damage: 45, crater: 9, life: 1.6, gravity: 0 },
   { key: 'bazooka', name: 'Bazooka', ammo: 6, charge: true, kind: 'rocket', sound: 'big',
     minSpeed: 160, maxSpeed: 800, gravity: 180, radius: 42, damage: 55, knockback: 420,
-    windFactor: 70, ownerSafeTime: 0.25 },
+    ownerSafeTime: 0.25 },
   { key: 'grenade', name: 'Grenade', ammo: 6, charge: true, kind: 'thrown', sound: 'shot',
-    minSpeed: 140, maxSpeed: 840, fuse: 3, bounce: 0.5, radius: 46, damage: 55, knockback: 400,
-    windFactor: 14 },
+    minSpeed: 140, maxSpeed: 840, fuse: 3, bounce: 0.5, radius: 46, damage: 55, knockback: 400 },
   { key: 'dynamite', name: 'Dynamite', ammo: 3, charge: true, kind: 'thrown', sound: 'shot',
-    minSpeed: 50, maxSpeed: 310, fuse: 4, bounce: 0.1, radius: 76, damage: 85, knockback: 540,
-    windFactor: 0 }
+    minSpeed: 50, maxSpeed: 310, fuse: 4, bounce: 0.1, radius: 76, damage: 85, knockback: 540 }
 ];
 
 export function weaponDef(key) {

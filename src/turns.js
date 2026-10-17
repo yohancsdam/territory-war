@@ -1,8 +1,5 @@
-import {
-  TURN_TIME, WIND_MAX, RESOLVE_MIN_TIME, RESOLVE_SETTLE_TIME, RESOLVE_MAX_TIME
-} from './config.js';
+import { TURN_TIME, RESOLVE_MIN_TIME, RESOLVE_SETTLE_TIME, RESOLVE_MAX_TIME } from './config.js';
 import { G, S, feed, setBanner } from './state.js';
-import { rand } from './rng.js';
 
 export function canAct() { return !!S.teams && G.phase === 'play' && G.active && G.active.alive && !G.fired; }
 export function aliveCount(t) { var n = 0; S.teams[t].units.forEach(function (u) { if (u.alive) n++; }); return n; }
@@ -18,7 +15,6 @@ export function startTurn() {
   var u = nextUnit(G.t);
   if (!u) { endGame(); return; }
   G.active = u; G.timer = TURN_TIME; G.phase = 'play'; G.fired = false; G.charging = false; G.power = 0; G.jumpReq = false;
-  G.wind = Math.round(rand(-WIND_MAX, WIND_MAX) * 10) / 10;
   if (!(S.teams[G.t].ammo[G.weapon] > 0)) G.weapon = 'pistol';
   setBanner(S.teams[G.t].name + "'s turn: " + u.name);
   feed(S.teams[G.t].name + "'s turn: " + u.name + '.');

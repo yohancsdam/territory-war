@@ -108,7 +108,7 @@ export function stepBullet(p, dt) {
 export function stepRocket(p, dt) {
   var w = weaponDef(p.w);
   p.age += dt;
-  p.vy += w.gravity * dt; p.vx += G.wind * w.windFactor * dt;
+  p.vy += w.gravity * dt;
   var sp = Math.sqrt(p.vx * p.vx + p.vy * p.vy), dist = sp * dt, n = Math.max(1, Math.ceil(dist / 2));
   for (var i = 0; i < n; i++) {
     p.x += p.vx * dt / n; p.y += p.vy * dt / n;
@@ -124,7 +124,6 @@ export function stepThrown(p, dt) {
   var w = weaponDef(p.w);
   p.age += dt;
   p.vy += GRAV * dt;
-  p.vx += G.wind * w.windFactor * dt;
   var nx = p.x + p.vx * dt, ny = p.y + p.vy * dt;
   if (solid(nx, p.y)) p.vx = -p.vx * w.bounce; else p.x = nx;
   if (solid(p.x, ny)) {
