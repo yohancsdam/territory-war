@@ -240,3 +240,28 @@ Cada etapa del desarrollo se cierra comprobando:
 
 Si el tramo del online se complica, el juego local ya es jugable al terminar la primera hora.
 Ese es el seguro.
+
+---
+
+## 10. Decisions taken during development
+
+Recorded in English (project language from this point on).
+
+- **Language:** all game UI text, code and new docs are in English.
+- **Tuning:** every gameplay number (weapon damage, explosion radius, knockback, ammo, speeds,
+  timers…) lives in `src/config.js`. Weapons are data entries there.
+- **Extra modules** beyond section 5: `sim.js` (setupBattle/startBattle, `applyIntent`, `step`),
+  `fx.js` (particles, floating text, shake), `audio.js` (synth sounds), `util.js`.
+- **Effects as events:** the simulation never draws or plays sounds. It queues cosmetic events
+  (`emit`) that the frame loop plays locally and the host forwards to the guest in snapshots.
+- **"Random" map option kept:** the style is picked from the seeded PRNG, so it's still the same
+  map on both screens.
+- **Weapon spread** (pistol, shotgun) still uses `Math.random`. That's fine because only the
+  host simulates.
+- **`init` message:** `{ type:'init', seed, style, names, hp }`. No `size`, since teams are always 6.
+- **Snapshot** carries more than section 6 lists: `booms` (explosion flashes), `teams`
+  (ammo, stats, rotation pointer), `fx` (cosmetic events) and drawing fields per unit and
+  projectile. Banner text and timer travel inside `g`.
+- **Extra messages:** `wait` (host went back to room settings), `full` (room already has two
+  players), `ping` (heartbeat each second; 8 s of silence = connection lost).
+- **Background tabs:** a worker timer keeps the host simulating while its tab is hidden.

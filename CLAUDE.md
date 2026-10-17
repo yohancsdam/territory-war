@@ -65,6 +65,7 @@ src/
   sim.js              step, startBattle, applyIntent (the simulation entry points)
   state.js            G, teams, units, proj; serializeSnapshot / applySnapshot
   fx.js / audio.js    particles, floating text, screen shake, synth sounds (visual/audio only)
+  util.js             small helpers (clamp, esc)
   input.js            keyboard, mouse, touch → intent object
   render.js           draw, drawUnit, drawProj, drawReticle, HUD
   menu.js             start screen, setup and lobby
@@ -95,3 +96,6 @@ new craters (`carves`) in each snapshot — **never the terrain mask**.
 - `npm run dev` — dev server
 - `npm test` — Vitest rule tests
 - `npm run build` — production build into `dist/`
+- `npm run preview` — serve `dist/` at http://localhost:4173/territory-war/
+
+Spec section 10 lists the decisions taken during development (snapshot format, extra messages…).
