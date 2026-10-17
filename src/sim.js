@@ -9,11 +9,16 @@ import { doFire, updateProj } from './weapons.js';
 import { canAct, aliveCount, startTurn, beginResolve, updateResolve } from './turns.js';
 import { clearFx } from './fx.js';
 import { ac } from './audio.js';
-import { rand } from './rng.js';
+import { mulberry32, rangeOf, randomSeed } from './rng.js';
 import { clamp } from './util.js';
 
+// cfg: { names: [red, blue], hp, style, seed }. Map and soldier placement depend only on
+// style and seed, so the same cfg always produces the same battlefield.
 export function startBattle(cfg) {
-  genTerrain(cfg.style);
+  S.style = genTerrain(cfg.style, cfg.seed);
+  S.seed = cfg.seed;
+  var rng = mulberry32((cfg.seed ^ 0x9E3779B9) >>> 0);
+  function rand(a, b) { return rangeOf(rng, a, b); }
   S.proj = []; S.booms = []; S.units = []; S.feedList = []; S.feedVersion++;
   clearFx();
   S.teams = [0, 1].map(function (t) {
@@ -41,7 +46,7 @@ export function startBattle(cfg) {
 export function resetToMenu() {
   G.phase = 'menu'; G.active = null; S.teams = null; S.units = []; S.proj = []; S.booms = [];
   clearFx();
-  genTerrain('hills');
+  genTerrain('hills', randomSeed());
 }
 
 /* ---------- Player actions ---------- */

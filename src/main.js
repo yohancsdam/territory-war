@@ -1,7 +1,8 @@
 import './style.css';
 import { DT } from './config.js';
 import { G, S, keys } from './state.js';
-import { genTerrain, mask } from './terrain.js';
+import { genTerrain, hashMask, mask } from './terrain.js';
+import { randomSeed } from './rng.js';
 import { step, startBattle, setWeapon, pressFire, releaseFire } from './sim.js';
 import { doFire } from './weapons.js';
 import { updateFx } from './fx.js';
@@ -13,7 +14,7 @@ var cv = document.getElementById('cv');
 setupRender(cv);
 setupInput(cv);
 setupMenu();
-genTerrain('hills');
+genTerrain('hills', randomSeed());
 
 var lastTs = 0, acc = 0, lastPhase = G.phase;
 function frame(ts) {
@@ -33,5 +34,8 @@ requestAnimationFrame(frame);
 window.__tw = {
   start: beginBattle, startSim: startBattle, step: step, fire: doFire, press: pressFire, release: releaseFire,
   state: function () { return { G: G, teams: S.teams, units: S.units, proj: S.proj }; },
-  keys: keys, setWeapon: setWeapon, mask: mask
+  keys: keys, setWeapon: setWeapon, mask: mask,
+  // Generates a map (replacing the current terrain) and returns the hash of its mask.
+  terrainHash: function (style, seed) { genTerrain(style, seed); return hashMask(); },
+  hashMask: hashMask
 };

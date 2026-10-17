@@ -3,6 +3,7 @@ import { G, S } from './state.js';
 import { startBattle, resetToMenu } from './sim.js';
 import { invalidateWeapons } from './render.js';
 import { ac, isSoundOn, setSoundOn } from './audio.js';
+import { randomSeed } from './rng.js';
 import { esc } from './util.js';
 
 var lastCfg = null;
@@ -16,9 +17,10 @@ function readCfg() {
   };
 }
 
+// Starts a local battle on a freshly rolled map.
 export function beginBattle(cfg) {
   lastCfg = cfg;
-  startBattle(cfg);
+  startBattle(Object.assign({}, cfg, { seed: randomSeed() }));
   $('menu').hidden = true; $('over').hidden = true;
   invalidateWeapons();
   $('cv').focus();

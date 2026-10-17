@@ -9,7 +9,7 @@ export const G = {
 
 // Battle entities. teams is null when no battle is running.
 export const S = {
-  teams: null, units: [], proj: [], booms: [],
+  teams: null, units: [], proj: [], booms: [], seed: 0, style: 'hills',
   feedList: [], feedVersion: 0
 };
 

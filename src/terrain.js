@@ -1,5 +1,5 @@
 import { W, H } from './config.js';
-import { rand } from './rng.js';
+import { mulberry32, rangeOf } from './rng.js';
 import { clamp } from './util.js';
 
 // 1 = solid ground, 0 = air. Row-major, W×H.
@@ -37,8 +37,14 @@ function fillRect(x0, y0, w, h) {
     for (var x = Math.max(0, x0); x < Math.min(W, x0 + w); x++) mask[y * W + x] = 1;
 }
 
-export function genTerrain(style) {
-  if (style === 'random') style = ['hills', 'islands', 'canyon'][Math.floor(Math.random() * 3)];
+export const MAP_STYLES = ['hills', 'islands', 'canyon'];
+
+// Builds the terrain for a style ('hills' | 'islands' | 'canyon' | 'random') from a seed.
+// The same style and seed always produce the same mask. Returns the resolved style.
+export function genTerrain(style, seed) {
+  var rng = mulberry32(seed);
+  function rand(a, b) { return rangeOf(rng, a, b); }
+  if (MAP_STYLES.indexOf(style) < 0) style = MAP_STYLES[Math.floor(rng() * MAP_STYLES.length)];
   mask.fill(0);
   var x, y;
   if (style === 'hills') {
@@ -85,6 +91,13 @@ export function paintTerrain(d) {
       } else { depth = 0; d[o + 3] = 0; }
     }
   }
+}
+
+// 32-bit FNV-1a hash of the mask, to compare terrains cheaply.
+export function hashMask() {
+  var h = 0x811c9dc5;
+  for (var i = 0; i < mask.length; i++) { h ^= mask[i]; h = Math.imul(h, 0x01000193); }
+  return h >>> 0;
 }
 
 export function carve(cx, cy, r) {
