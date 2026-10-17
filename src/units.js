@@ -35,7 +35,7 @@ export function die(u, how) {
   var cr = (u.lastHit >= 0 && u.lastHit !== u.team) ? u.lastHit : -1;
   if (cr >= 0) S.teams[cr].stat.kills++;
   var x = clamp(u.x, 10, W - 10), y = clamp(u.y - 14, 10, H - 10);
-  emit({ k: 'burst', x: x, y: y, n: 18, col: '#f4f4f4', speed: 180, life: 0.8, size: 3, g: 300 });
+  emit({ k: 'burst', x: x, y: y, n: 14, col: '#eef0f2', speed: 110, life: 0.9, size: 5, g: -20, kind: 'smoke' });
   emit({ k: 'text', x: x, y: y - 20, txt: how === 'out' ? 'Out!' : 'K.O.', col: '#ffd166' });
   feed(u.name + ' (' + S.teams[u.team].name + ') ' + (how === 'out' ? 'was blasted off the map.' : 'fell in battle.'));
   emit({ k: 'sfx', s: 'hit' });

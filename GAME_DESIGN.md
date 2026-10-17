@@ -264,4 +264,7 @@ Recorded in English (project language from this point on).
   projectile. Banner text and timer travel inside `g`.
 - **Extra messages:** `wait` (host went back to room settings), `full` (room already has two
   players), `ping` (heartbeat each second; 8 s of silence = connection lost).
-- **Background tabs:** a worker timer keeps the host simulating while its tab is hidden.
+- **Background tabs:** a worker timer keeps the host simulating while its tab is hidden.- **Graphics pass** (requested by the user, overriding the "no final art" line in section 7): procedural
+  only, no image assets. Per-map terrain palettes and textures, scenery backgrounds built from the
+  seed, animated water, detailed soldiers and weapons, glowing explosions, smoke, debris and muzzle
+  flashes. Still purely cosmetic: `render.js` and `fx.js` never change game state.

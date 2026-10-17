@@ -10,8 +10,8 @@ import { hurt } from './units.js';
 import { canAct, beginResolve } from './turns.js';
 import { rand } from './rng.js';
 
-function burst(x, y, n, col, speed, life, size, g) {
-  emit({ k: 'burst', x: x, y: y, n: n, col: col, speed: speed, life: life, size: size, g: g });
+function burst(x, y, n, col, speed, life, size, g, kind) {
+  emit({ k: 'burst', x: x, y: y, n: n, col: col, speed: speed, life: life, size: size, g: g, kind: kind });
 }
 
 export function unitAt(x, y, skip) {
@@ -54,6 +54,7 @@ export function doFire() {
     if (w.kind === 'rocket') p.trail = 0; else p.fuse = w.fuse;
     S.proj.push(p);
   }
+  if (w.kind !== 'thrown') emit({ k: 'flash', x: m.x, y: m.y, ang: m.ang, size: w.kind === 'rocket' || w.pellets > 1 || w.damage > 30 ? 1.5 : 1 });
   emit({ k: 'sfx', s: w.sound });
   T.stat.shots++;
   if (T.ammo[k] !== Infinity) T.ammo[k]--;
@@ -77,8 +78,9 @@ export function explode(x, y, R, maxDmg, maxKB, team) {
     }
   });
   var i;
-  for (i = 0; i < 3; i++) burst(x, y, 10, ['#ffb703', '#fb8500', '#ffd166'][i], R * 3.2, 0.55, 3 + i, 0);
-  burst(x, y, 12, '#555b60', R * 1.6, 1.1, 4, -40);
+  for (i = 0; i < 3; i++) burst(x, y, 10, ['#ffb703', '#fb8500', '#ffd166'][i], R * 3.2, 0.55, 2 + i, 60, 'spark');
+  burst(x, y, 14, '#6b7076', R * 1.4, 1.4, 6, -40, 'smoke');
+  emit({ k: 'debris', x: x, y: y, n: Math.round(R / 2.5), speed: R * 5 });
   S.booms.push({ x: x, y: y, r: R, t: 0 });
   emit({ k: 'shake', v: Math.min(12, R / 6) });
   emit({ k: 'sfx', s: 'boom' });
@@ -95,13 +97,14 @@ export function stepBullet(p, dt) {
     if (u) {
       u.vx += p.vx / sp * BULLET_KNOCKBACK; u.vy -= BULLET_LIFT; u.onGround = false;
       hurt(u, p.dmg, p.team);
-      burst(p.x, p.y, 5, '#ffe082', 160, 0.3, 2, 0);
+      burst(p.x, p.y, 5, '#ffe082', 160, 0.3, 2, 0, 'spark');
       emit({ k: 'sfx', s: 'hit' });
       return true;
     }
     if (solid(p.x, p.y)) {
       carve(p.x, p.y, p.crater);
-      burst(p.x, p.y, 5, '#ffe082', 150, 0.3, 2, 300);
+      burst(p.x, p.y, 5, '#ffe082', 150, 0.3, 2, 300, 'spark');
+      emit({ k: 'debris', x: p.x, y: p.y, n: Math.round(p.crater / 2) + 1, speed: 120 });
       return true;
     }
   }

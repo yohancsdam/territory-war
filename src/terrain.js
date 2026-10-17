@@ -6,7 +6,7 @@ import { clamp } from './util.js';
 export const mask = new Uint8Array(W * H);
 // version increases every time the mask changes, so the renderer knows when to repaint.
 // log, when it is an array, collects every carve as {x, y, r} so it can be sent to the guest.
-export const terrain = { version: 0, log: null };
+export const terrain = { version: 0, log: null, style: 'hills' };
 
 export function solid(x, y) {
   x = x | 0; y = y | 0;
@@ -69,28 +69,133 @@ export function genTerrain(style, seed) {
     fillRect(400 + Math.floor(rand(-20, 20)), 240, 150, 12);
     fillIsland(480, 400, 42, 50);
   }
+  terrain.style = style;
+  measureOriginalDepth();
   terrain.version++;
   return style;
 }
 
+/* ---------- Painting (cosmetic only) ---------- */
+
+// Depth of every pixel below the surface the map was generated with, so craters show bare
+// earth instead of growing new grass.
+var origDepth = new Uint8Array(W * H);
+function measureOriginalDepth() {
+  for (var x = 0; x < W; x++) {
+    var d = 0;
+    for (var y = 0; y < H; y++) {
+      var i = y * W + x;
+      d = mask[i] ? Math.min(255, d + 1) : 0;
+      origDepth[i] = d;
+    }
+  }
+}
+
+// Smooth value noise in [0, 1), fixed for the whole session.
+var noiseA = null, noiseB = null;
+function hash2(x, y) {
+  var h = Math.imul(x, 374761393) + Math.imul(y, 668265263) | 0;
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
+function valueNoise(cell, salt) {
+  var out = new Float32Array(W * H);
+  for (var y = 0; y < H; y++) {
+    var gy = y / cell, y0 = Math.floor(gy), fy = gy - y0;
+    fy = fy * fy * (3 - 2 * fy);
+    for (var x = 0; x < W; x++) {
+      var gx = x / cell, x0 = Math.floor(gx), fx = gx - x0;
+      fx = fx * fx * (3 - 2 * fx);
+      var a = hash2(x0 + salt, y0), b = hash2(x0 + 1 + salt, y0), c = hash2(x0 + salt, y0 + 1), e = hash2(x0 + 1 + salt, y0 + 1);
+      out[y * W + x] = (a + (b - a) * fx) * (1 - fy) + (c + (e - c) * fx) * fy;
+    }
+  }
+  return out;
+}
+function ensureNoise() {
+  if (noiseA) return;
+  noiseA = valueNoise(7, 0);
+  noiseB = valueNoise(23, 977);
+  var fine = valueNoise(2, 4111);
+  for (var i = 0; i < noiseA.length; i++) noiseA[i] = noiseA[i] * 0.7 + fine[i] * 0.3;
+}
+
+// Colours per map style. RGB triplets.
+var PALETTES = {
+  hills: {
+    grassTop: [132, 204, 78], grass: [86, 166, 54], grassDeep: [58, 128, 42],
+    top: [156, 108, 66], deep: [82, 56, 40], stone: [112, 100, 90], scorch: [64, 46, 36],
+    debris: ['#7a5434', '#5d4130', '#4f9a3a']
+  },
+  islands: {
+    grassTop: [140, 214, 104], grass: [92, 178, 86], grassDeep: [60, 136, 70],
+    top: [150, 132, 112], deep: [84, 76, 78], stone: [176, 170, 160], scorch: [58, 52, 54],
+    debris: ['#8a7b6a', '#5e5658', '#5cae58']
+  },
+  canyon: {
+    grassTop: [240, 206, 140], grass: [226, 182, 112], grassDeep: [204, 154, 92],
+    top: [206, 120, 70], deep: [112, 56, 38], stone: [232, 168, 104], scorch: [86, 44, 30],
+    strata: [[206, 122, 72], [214, 136, 82], [196, 112, 66], [220, 146, 92], [202, 118, 70]],
+    debris: ['#c7753f', '#9c5232', '#e3b06e']
+  }
+};
+export function debrisColors() { return (PALETTES[terrain.style] || PALETTES.hills).debris; }
+
+var dTop = new Uint8Array(W * H), dBot = new Uint8Array(W * H), dSide = new Uint8Array(W * H);
+
 // Writes the terrain colours into an RGBA pixel array (ImageData.data) of size W×H.
 export function paintTerrain(d) {
-  var x, y;
+  ensureNoise();
+  var P = PALETTES[terrain.style] || PALETTES.hills, canyon = terrain.style === 'canyon';
+  var x, y, i, run;
+  // Distance to air above, below and to the sides (capped), for edge shading.
   for (x = 0; x < W; x++) {
-    var depth = 0;
-    for (y = 0; y < H; y++) {
-      var i = y * W + x, o = i * 4;
-      if (mask[i]) {
-        depth++;
-        var n = (x * 7 + y * 13) % 9;
-        if (depth <= 5) { d[o] = 66 + n * 2; d[o + 1] = 158 + n * 3; d[o + 2] = 56; }
-        else {
-          var k = Math.min(depth, 140) / 140;
-          d[o] = Math.round(150 - 54 * k) + n; d[o + 1] = Math.round(104 - 40 * k) + n; d[o + 2] = Math.round(66 - 26 * k) + n;
-        }
-        d[o + 3] = 255;
-      } else { depth = 0; d[o + 3] = 0; }
+    run = 0;
+    for (y = 0; y < H; y++) { i = y * W + x; run = mask[i] ? Math.min(255, run + 1) : 0; dTop[i] = run; }
+    run = 255;
+    for (y = H - 1; y >= 0; y--) { i = y * W + x; run = mask[i] ? Math.min(255, run + 1) : 0; dBot[i] = run; }
+  }
+  for (y = 0; y < H; y++) {
+    run = 255;
+    for (x = 0; x < W; x++) { i = y * W + x; run = mask[i] ? Math.min(255, run + 1) : 0; dSide[i] = run; }
+    run = 255;
+    for (x = W - 1; x >= 0; x--) { i = y * W + x; run = mask[i] ? Math.min(255, run + 1) : 0; if (run < dSide[i]) dSide[i] = run; }
+  }
+  for (i = 0; i < W * H; i++) {
+    var o = i * 4;
+    if (!mask[i]) { d[o + 3] = 0; continue; }
+    y = (i / W) | 0;
+    var na = noiseA[i], nb = noiseB[i], top = dTop[i], od = origDepth[i];
+    var grassH = canyon ? 3 + ((nb * 3) | 0) : 4 + ((na * 5) | 0);
+    var r, g, b, t;
+    if (od <= grassH && top <= grassH) {
+      t = top / grassH;
+      var c0 = top <= 1 ? P.grassTop : P.grass;
+      r = c0[0] + (P.grassDeep[0] - c0[0]) * t; g = c0[1] + (P.grassDeep[1] - c0[1]) * t; b = c0[2] + (P.grassDeep[2] - c0[2]) * t;
+    } else {
+      t = Math.min(od, 170) / 170;
+      var base = P.top;
+      if (canyon) {
+        var band = (y + nb * 10 + na * 3) / 9, bi = Math.floor(band), bf = band - bi;
+        var sa = P.strata[bi % P.strata.length], sb = P.strata[(bi + 1) % P.strata.length];
+        bf = bf < 0.8 ? 0 : (bf - 0.8) / 0.2;
+        base = [sa[0] + (sb[0] - sa[0]) * bf, sa[1] + (sb[1] - sa[1]) * bf, sa[2] + (sb[2] - sa[2]) * bf];
+      }
+      r = base[0] + (P.deep[0] - base[0]) * t; g = base[1] + (P.deep[1] - base[1]) * t; b = base[2] + (P.deep[2] - base[2]) * t;
+      if (na > 0.74 && nb > 0.45) { // small stones
+        var s = Math.min(1, (na - 0.74) * 10) * 0.55;
+        r += (P.stone[0] - r) * s; g += (P.stone[1] - g) * s; b += (P.stone[2] - b) * s;
+      }
+      if (top <= 3) { // freshly exposed crater surface
+        var k = top === 1 ? 0.7 : (top === 2 ? 0.45 : 0.25);
+        r += (P.scorch[0] - r) * k; g += (P.scorch[1] - g) * k; b += (P.scorch[2] - b) * k;
+      }
     }
+    var shade = 0.88 + na * 0.24;
+    var under = dBot[i], side = dSide[i];
+    if (under <= 4) shade *= 0.62 + under * 0.08;
+    if (side <= 3) shade *= 0.8 + side * 0.06;
+    d[o] = r * shade; d[o + 1] = g * shade; d[o + 2] = b * shade; d[o + 3] = 255;
   }
 }
 
