@@ -13,7 +13,7 @@ Territory War (Afro-Ninja), pero con código, nombres y arte propios. No se copi
 ni código del original.
 
 **Alcance de esta fase (4 horas):** juego local a dos en el mismo dispositivo + multijugador
-online básico por WebRTC para jugar con amigos. Sin CPU, sin campaña, sin progresión,
+online básico por WebRTC para jugar con amigos. Sin CPU, sin cadmpaña, sin progresión,
 sin arte final.
 
 ---
